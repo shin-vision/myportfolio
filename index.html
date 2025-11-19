@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3DCG Designer Portfolio</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Oswald:wght@500&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Noto Sans JP', 'sans-serif'],
+                        display: ['Oswald', 'sans-serif'],
+                    },
+                    colors: {
+                        'accent': '#00f2ff', // Cyan neon
+                        'accent-hover': '#00c8d3',
+                        'dark-bg': '#0a0a0a',
+                        'card-bg': '#1a1a1a',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0a0a0a;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0a0a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00f2ff; 
+        }
+
+        .glass-panel {
+            background: rgba(26, 26, 26, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Loader Animation */
+        .loader-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+        .loader {
+            border: 4px solid #333;
+            border-top: 4px solid #00f2ff;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Image Hover Effect */
+        .work-card:hover .work-overlay {
+            opacity: 1;
+        }
+        .work-card img {
+            transition: transform 0.5s ease;
+        }
+        .work-card:hover img {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-accent selection:text-black">
+
+    <!-- Loader -->
+    <div id="loader" class="loader-wrapper">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Background Canvas for Three.js -->
+    <canvas id="bg-canvas" class="fixed top-0 left-0 w-full h-full -z-10"></canvas>
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 glass-panel transition-all duration-300" id="navbar">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <a href="#" class="font-display text-2xl text-white tracking-wider">K.SATO <span class="text-accent text-sm">3DCG</span></a>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-8">
+                        <a href="#home" class="hover:text-accent px-3 py-2 rounded-md text-sm font-medium transition-colors">Home</a>
+                        <a href="#works" class="hover:text-accent px-3 py-2 rounded-md text-sm font-medium transition-colors">Works</a>
+                        <a href="#about" class="hover:text-accent px-3 py-2 rounded-md text-sm font-medium transition-colors">About</a>
+                        <a href="#contact" class="hover:text-accent px-3 py-2 rounded-md text-sm font-medium transition-colors">Contact</a>
+                    </div>
+                </div>
+                <div class="-mr-2 flex md:hidden">
+                    <button type="button" onclick="document.getElementById('mobile-menu').classList.toggle('hidden')" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div class="hidden md:hidden glass-panel" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#home" class="text-gray-300 hover:text-accent block px-3 py-2 rounded-md text-base font-medium">Home</a>
+                <a href="#works" class="text-gray-300 hover:text-accent block px-3 py-2 rounded-md text-base font-medium">Works</a>
+                <a href="#about" class="text-gray-300 hover:text-accent block px-3 py-2 rounded-md text-base font-medium">About</a>
+                <a href="#contact" class="text-gray-300 hover:text-accent block px-3 py-2 rounded-md text-base font-medium">Contact</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="h-screen flex items-center justify-center relative">
+        <div class="text-center z-10 px-4">
+            <h2 class="text-accent text-lg md:text-xl font-display tracking-widest mb-4 fade-in-up">3DCG DESIGNER / MODELER</h2>
+            <h1 class="text-5xl md:text-7xl font-bold mb-6 leading-tight fade-in-up" style="animation-delay: 0.2s;">
+                BRINGING<br>IMAGINATION<br>TO LIFE
+            </h1>
+            <p class="text-gray-400 max-w-lg mx-auto mb-10 fade-in-up" style="animation-delay: 0.4s;">
+                キャラクターモデリング、背景、そしてアニメーション。<br>
+                細部までこだわり抜いた世界観を構築します。
+            </p>
+            <a href="#works" class="inline-block border border-accent text-accent hover:bg-accent hover:text-black py-3 px-8 rounded transition-all duration-300 fade-in-up" style="animation-delay: 0.6s;">
+                VIEW PORTFOLIO
+            </a>
+        </div>
+        
+        <!-- Scroll Indicator -->
+        <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce text-gray-500">
+            <i class="fas fa-chevron-down text-2xl"></i>
+        </div>
+    </section>
+
+    <!-- Works Section -->
+    <section id="works" class="py-20 bg-black bg-opacity-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-display font-bold mb-4">SELECTED WORKS</h2>
+                <div class="w-20 h-1 bg-accent mx-auto"></div>
+                
+                <!-- Filter Buttons -->
+                <div class="flex justify-center flex-wrap gap-4 mt-8" id="filters">
+                    <button class="filter-btn active text-sm px-4 py-2 border border-gray-600 rounded hover:border-accent hover:text-accent transition-colors bg-accent text-black" data-filter="all">ALL</button>
+                    <button class="filter-btn text-sm px-4 py-2 border border-gray-600 rounded hover:border-accent hover:text-accent transition-colors" data-filter="character">CHARACTER</button>
+                    <button class="filter-btn text-sm px-4 py-2 border border-gray-600 rounded hover:border-accent hover:text-accent transition-colors" data-filter="environment">ENVIRONMENT</button>
+                    <button class="filter-btn text-sm px-4 py-2 border border-gray-600 rounded hover:border-accent hover:text-accent transition-colors" data-filter="animation">ANIMATION</button>
+                </div>
+            </div>
+
+            <!-- Gallery Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="gallery-grid">
+                <!-- Items will be injected via JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="py-20 relative overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <div>
+                    <h2 class="text-3xl md:text-4xl font-display font-bold mb-6">ABOUT ME</h2>
+                    <div class="w-16 h-1 bg-accent mb-8"></div>
+                    <h3 class="text-xl font-bold mb-4">佐藤 健太 / Kenta Sato</h3>
+                    <p class="text-gray-400 mb-6 leading-relaxed">
+                        専門学校で3DCGを専攻し、現在はフリーランスの3Dジェネラリストとして活動しています。<br>
+                        リアリスティックなキャラクター造形から、スタイライズされた背景美術まで幅広く対応可能です。<br>
+                        「物語を感じる造形」をモットーに、見る人の想像力を掻き立てる作品作りを心がけています。
+                    </p>
+                    <div class="flex gap-4 text-2xl text-gray-400">
+                        <a href="#" class="hover:text-accent transition-colors"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="hover:text-accent transition-colors"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="hover:text-accent transition-colors"><i class="fab fa-artstation"></i></a>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-8 rounded-lg">
+                    <h3 class="text-xl font-bold mb-6 border-b border-gray-700 pb-2">Software Skills</h3>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <span>Maya</span>
+                                <span class="text-accent">90%</span>
+                            </div>
+                            <div class="w-full bg-gray-700 h-2 rounded-full">
+                                <div class="bg-accent h-2 rounded-full" style="width: 90%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <span>ZBrush</span>
+                                <span class="text-accent">85%</span>
+                            </div>
+                            <div class="w-full bg-gray-700 h-2 rounded-full">
+                                <div class="bg-accent h-2 rounded-full" style="width: 85%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <span>Blender</span>
+                                <span class="text-accent">80%</span>
+                            </div>
+                            <div class="w-full bg-gray-700 h-2 rounded-full">
+                                <div class="bg-accent h-2 rounded-full" style="width: 80%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <span>Substance Painter</span>
+                                <span class="text-accent">95%</span>
+                            </div>
+                            <div class="w-full bg-gray-700 h-2 rounded-full">
+                                <div class="bg-accent h-2 rounded-full" style="width: 95%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <span>Unreal Engine 5</span>
+                                <span class="text-accent">70%</span>
+                            </div>
+                            <div class="w-full bg-gray-700 h-2 rounded-full">
+                                <div class="bg-accent h-2 rounded-full" style="width: 70%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="py-20 bg-black bg-opacity-50">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-3xl md:text-4xl font-display font-bold mb-4">GET IN TOUCH</h2>
+            <div class="w-20 h-1 bg-accent mx-auto mb-8"></div>
+            <p class="text-gray-400 mb-10">
+                お仕事のご依頼、コラボレーションのご相談など、お気軽にご連絡ください。<br>
+                通常2営業日以内に返信いたします。
+            </p>
+            
+            <div class="glass-panel p-8 rounded-lg text-left">
+                <form onsubmit="event.preventDefault(); alert('デモ送信：メッセージありがとうございます。');" class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Name</label>
+                        <input type="text" class="w-full bg-gray-800 border border-gray-700 rounded px-4 py-3 focus:outline-none focus:border-accent transition-colors" placeholder="お名前">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Email</label>
+                        <input type="email" class="w-full bg-gray-800 border border-gray-700 rounded px-4 py-3 focus:outline-none focus:border-accent transition-colors" placeholder="メールアドレス">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Message</label>
+                        <textarea rows="4" class="w-full bg-gray-800 border border-gray-700 rounded px-4 py-3 focus:outline-none focus:border-accent transition-colors" placeholder="お問い合わせ内容"></textarea>
+                    </div>
+                    <button type="submit" class="w-full bg-accent text-black font-bold py-3 rounded hover:bg-accent-hover transition-colors">
+                        SEND MESSAGE
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-8 border-t border-gray-800 text-center text-gray-500 text-sm">
+        <p>&copy; 2024 Kenta Sato Portfolio. All rights reserved.</p>
+    </footer>
+
+    <!-- Modal for Project Details -->
+    <div id="project-modal" class="fixed inset-0 z-[100] hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Overlay -->
+            <div class="fixed inset-0 bg-black bg-opacity-90 transition-opacity" aria-hidden="true" onclick="closeModal()"></div>
+
+            <!-- Modal Content -->
+            <div class="inline-block align-bottom bg-card-bg rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full border border-gray-700">
+                <div class="absolute top-0 right-0 pt-4 pr-4 z-10">
+                    <button type="button" class="text-gray-400 hover:text-white focus:outline-none" onclick="closeModal()">
+                        <i class="fas fa-times text-2xl"></i>
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2">
+                    <!-- Image Container -->
+                    <div class="bg-black flex items-center justify-center h-64 md:h-auto">
+                        <img id="modal-image" src="" alt="Project Detail" class="max-w-full max-h-full object-contain">
+                    </div>
+                    
+                    <!-- Details Container -->
+                    <div class="p-8">
+                        <div class="flex items-center mb-4">
+                            <span id="modal-category" class="text-xs font-bold uppercase tracking-wider text-accent border border-accent px-2 py-1 rounded mr-3">Category</span>
+                            <span id="modal-date" class="text-gray-500 text-sm">2023.10</span>
+                        </div>
+                        <h3 id="modal-title" class="text-2xl font-bold mb-4 font-display">Project Title</h3>
+                        
+                        <div class="mb-6">
+                            <h4 class="text-sm font-bold text-gray-400 mb-2">DESCRIPTION</h4>
+                            <p id="modal-desc" class="text-gray-300 text-sm leading-relaxed">
+                                詳細説明がここに入ります。制作の背景や、こだわったポイントなどを記述します。
+                            </p>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <h4 class="text-sm font-bold text-gray-400 mb-2">TOOLS USED</h4>
+                            <div id="modal-tools" class="flex flex-wrap gap-2">
+                                <!-- Tools injected via JS -->
+                            </div>
+                        </div>
+
+                        <div>
+                             <h4 class="text-sm font-bold text-gray-400 mb-2">PRODUCTION TIME</h4>
+                             <p id="modal-time" class="text-gray-300 text-sm">約 20時間</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Data: Portfolio Items ---
+        // 実際の画像URLに置き換えてください。ダミー画像を使用しています。
+        const portfolioData = [
+            {
+                id: 1,
+                title: "Cyberpunk Street",
+                category: "environment",
+                image: "https://placehold.co/800x600/1a1a1a/00f2ff?text=Environment+Render",
+                desc: "ネオン輝く近未来の路地裏を表現しました。湿った地面の質感や、複雑な配管のモデリングに注力しています。Unreal Engine 5のLumenを使用してライティングを行いました。",
+                tools: ["Maya", "Substance Painter", "UE5"],
+                date: "2023.12",
+                time: "40 Hours"
+            },
+            {
+                id: 2,
+                title: "Warrior Character",
+                category: "character",
+                image: "https://placehold.co/800x600/1a1a1a/00f2ff?text=Character+Model",
+                desc: "ファンタジーRPG向けの戦士キャラクター。ZBrushでのスカルプトからリトポロジー、テクスチャリングまで一貫して行いました。鎧のダメージ表現にこだわっています。",
+                tools: ["ZBrush", "Maya", "Substance Painter"],
+                date: "2023.10",
+                time: "60 Hours"
+            },
+            {
+                id: 3,
+                title: "Mechanical Drone",
+                category: "character", // mechanical character
+                image: "https://placehold.co/800x600/1a1a1a/00f2ff?text=Mech+Design",
+                desc: "ハードサーフェスモデリングの習作です。機能性を意識した関節構造と、使い込まれた金属の質感を表現しました。",
+                tools: ["Blender", "Substance Painter"],
+                date: "2023.08",
+                time: "25 Hours"
+            },
+            {
+                id: 4,
+                title: "Forest Ruins",
+                category: "environment",
+                image: "https://placehold.co/800x600/1a1a1a/00f2ff?text=Nature+Scene",
+                desc: "自然と人工物の融合をテーマにした背景作品。SpeedTreeで作成した植生と、Megascansのアセットを組み合わせてレイアウトしました。",
+                tools: ["UE5", "SpeedTree", "Quixel"],
+                date: "2023.06",
+                time: "30 Hours"
+            },
+            {
+                id: 5,
+                title: "Walk Cycle Animation",
+                category: "animation",
+                image: "https://placehold.co/800x600/1a1a1a/00f2ff?text=Animation+Demo",
+                desc: "基本的な歩行アニメーションの習作。重心の移動と、腕の振りの自然なタイミングを意識しています。",
+                tools: ["Maya"],
+                date: "2023.05",
+                time: "10 Hours"
+            },
+            {
+                id: 6,
+                title: "Product Visualization",
+                category: "environment", // studio setup
+                image: "https://placehold.co/800x600/1a1a1a/00f2ff?text=Product+Viz",
+                desc: "香水ボトルの広告用レンダリング。ガラスの屈折率とコースティクスの設定を調整し、高級感を演出しました。",
+                tools: ["Blender", "Cycles"],
+                date: "2023.04",
+                time: "15 Hours"
+            }
+        ];
+
+        // --- JS: Gallery Rendering ---
+        const galleryGrid = document.getElementById('gallery-grid');
+        const filterBtns = document.querySelectorAll('.filter-btn');
+
+        function renderGallery(filter = 'all') {
+            galleryGrid.innerHTML = '';
+            
+            const filteredItems = filter === 'all' 
+                ? portfolioData 
+                : portfolioData.filter(item => item.category === filter);
+
+            filteredItems.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'work-card group relative overflow-hidden rounded-lg bg-card-bg shadow-lg cursor-pointer';
+                div.onclick = () => openModal(item.id);
+                div.style.animation = `fadeIn 0.5s ease forwards ${index * 0.1}s`;
+                div.style.opacity = '0'; // Initial state for animation
+
+                div.innerHTML = `
+                    <div class="aspect-w-4 aspect-h-3 relative h-64 overflow-hidden">
+                        <img src="${item.image}" alt="${item.title}" class="w-full h-full object-cover">
+                        <div class="work-overlay absolute inset-0 bg-black bg-opacity-80 opacity-0 transition-opacity duration-300 flex flex-col items-center justify-center p-4">
+                            <p class="text-accent text-sm tracking-wider mb-2 uppercase">${item.category}</p>
+                            <h3 class="text-xl font-bold font-display text-white mb-2">${item.title}</h3>
+                            <span class="text-gray-400 text-xs border border-gray-600 px-3 py-1 rounded-full">View Details</span>
+                        </div>
+                    </div>
+                `;
+                galleryGrid.appendChild(div);
+            });
+
+            // Trigger animations via CSS class
+            const style = document.createElement('style');
+            style.innerHTML = `
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(20px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // --- JS: Filter Logic ---
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Update active state
+                filterBtns.forEach(b => {
+                    b.classList.remove('bg-accent', 'text-black');
+                    b.classList.add('text-white');
+                });
+                btn.classList.remove('text-white');
+                btn.classList.add('bg-accent', 'text-black');
+
+                // Filter
+                renderGallery(btn.dataset.filter);
+            });
+        });
+
+        // --- JS: Modal Logic ---
+        const modal = document.getElementById('project-modal');
+        
+        function openModal(id) {
+            const item = portfolioData.find(p => p.id === id);
+            if (!item) return;
+
+            document.getElementById('modal-image').src = item.image;
+            document.getElementById('modal-category').innerText = item.category;
+            document.getElementById('modal-title').innerText = item.title;
+            document.getElementById('modal-desc').innerText = item.desc;
+            document.getElementById('modal-date').innerText = item.date;
+            document.getElementById('modal-time').innerText = item.time;
+
+            const toolsContainer = document.getElementById('modal-tools');
+            toolsContainer.innerHTML = '';
+            item.tools.forEach(tool => {
+                const span = document.createElement('span');
+                span.className = 'bg-gray-800 text-xs text-gray-300 px-2 py-1 rounded';
+                span.innerText = tool;
+                toolsContainer.appendChild(span);
+            });
+
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; // Prevent scrolling
+        }
+
+        function closeModal() {
+            modal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Escape key to close modal
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+                closeModal();
+            }
+        });
+
+        // --- Three.js Background Animation ---
+        function initThreeJS() {
+            const canvas = document.getElementById('bg-canvas');
+            const scene = new THREE.Scene();
+            
+            // Camera
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 5;
+
+            // Renderer
+            const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            // Objects
+            // 1. Wireframe Icosahedron (Main Object)
+            const geometry = new THREE.IcosahedronGeometry(2, 1); // radius, detail
+            const material = new THREE.MeshBasicMaterial({ 
+                color: 0x00f2ff, 
+                wireframe: true,
+                transparent: true,
+                opacity: 0.15
+            });
+            const ico = new THREE.Mesh(geometry, material);
+            scene.add(ico);
+
+            // 2. Inner Shape
+            const geo2 = new THREE.OctahedronGeometry(1, 0);
+            const mat2 = new THREE.MeshBasicMaterial({
+                color: 0xffffff,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.1
+            });
+            const oct = new THREE.Mesh(geo2, mat2);
+            scene.add(oct);
+
+            // 3. Particles
+            const particlesGeometry = new THREE.BufferGeometry();
+            const particlesCount = 700;
+            const posArray = new Float32Array(particlesCount * 3);
+
+            for(let i = 0; i < particlesCount * 3; i++) {
+                posArray[i] = (Math.random() - 0.5) * 20; // Spread particles
+            }
+
+            particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+            const particlesMaterial = new THREE.PointsMaterial({
+                size: 0.02,
+                color: 0x00f2ff,
+                transparent: true,
+                opacity: 0.5
+            });
+            const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+            scene.add(particlesMesh);
+
+            // Mouse Interaction
+            let mouseX = 0;
+            let mouseY = 0;
+            let targetX = 0;
+            let targetY = 0;
+
+            const windowHalfX = window.innerWidth / 2;
+            const windowHalfY = window.innerHeight / 2;
+
+            document.addEventListener('mousemove', (event) => {
+                mouseX = (event.clientX - windowHalfX);
+                mouseY = (event.clientY - windowHalfY);
+            });
+
+            // Animation Loop
+            const clock = new THREE.Clock();
+
+            function animate() {
+                requestAnimationFrame(animate);
+
+                const elapsedTime = clock.getElapsedTime();
+
+                targetX = mouseX * 0.001;
+                targetY = mouseY * 0.001;
+
+                // Rotate Objects
+                ico.rotation.y += 0.002;
+                ico.rotation.x += 0.001;
+                
+                oct.rotation.y -= 0.003;
+                oct.rotation.z += 0.001;
+
+                particlesMesh.rotation.y = -elapsedTime * 0.05;
+
+                // Parallax Effect ease-in
+                ico.rotation.y += 0.05 * (targetX - ico.rotation.y);
+                ico.rotation.x += 0.05 * (targetY - ico.rotation.x);
+
+                renderer.render(scene, camera);
+            }
+
+            animate();
+
+            // Resize Handler
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+
+        // --- Initialization ---
+        window.addEventListener('load', () => {
+            // Remove loader
+            const loader = document.getElementById('loader');
+            loader.style.opacity = '0';
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 500);
+
+            // Init components
+            initThreeJS();
+            renderGallery();
+        });
+
+        // Scroll Navbar Effect
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                nav.classList.add('shadow-lg');
+                nav.style.background = 'rgba(10, 10, 10, 0.95)';
+            } else {
+                nav.classList.remove('shadow-lg');
+                nav.style.background = 'rgba(26, 26, 26, 0.8)';
+            }
+        });
+
+    </script>
+</body>
+</html>
